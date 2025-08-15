@@ -1,12 +1,10 @@
 (() => {
   // Попытка получить LitElement из разных источников
   const LitElement = window.LitElement || Object.getPrototypeOf(customElements.get("hui-view"));
-
-  // Попытка получить html и css
   const html = window.LitHtml || (LitElement && LitElement.prototype.html) || (() => '');
-  const css = window.LitCss || (LitElement && LitElement.prototype.css) || (() => '');
 
   if (!LitElement) {
+    console.error('KettleCard: LitElement not found');
     return;
   }
 
@@ -19,8 +17,8 @@
     }
 
     static get styles() {
-      // Используем LitElement.prototype.css напрямую
-      return LitElement.prototype.css`
+      // Используем теговые шаблоны напрямую без LitElement.prototype.css
+      return css`
         .card-header {
           display: flex;
           justify-content: space-between;
@@ -160,7 +158,7 @@
     }
   }
 
-  // Класс редактора (только один раз!)
+  // Класс редактора
   class KettleCardEditor extends LitElement {
     static get properties() {
       return {
@@ -211,6 +209,7 @@
   try {
     customElements.define('kettle-card', KettleCard);
     customElements.define('kettle-card-editor', KettleCardEditor);
+    console.log('KettleCard: Elements registered successfully');
   } catch (error) {
     console.error('KettleCard: Error registering elements:', error);
   }
