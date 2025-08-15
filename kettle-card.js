@@ -64,16 +64,16 @@ class KettleCard extends LitElement {
       }
       .circle-container {
         position: relative;
-        width: 225px; /* Увеличенный центральный круг */
-        height: 225px; /* Увеличенный центральный круг */
+        width: 337.5px; /* 225 * 1.5 */
+        height: 337.5px; /* 225 * 1.5 */
         margin: 0 auto;
-        transform: rotate(90deg); /* Поворот на 90° */
+        transform: rotate(0deg); /* Поворот на 0° */
       }
       .circle-bg {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 22.5px solid var(--secondary-background-color); /* Увеличенная толщина */
+        border: 33.75px solid var(--secondary-background-color); /* 22.5 * 1.5 */
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -83,7 +83,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 22.5px solid var(--primary-color); /* Увеличенная толщина */
+        border: 33.75px solid var(--primary-color); /* 22.5 * 1.5 */
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -97,16 +97,16 @@ class KettleCard extends LitElement {
         left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
-        font-size: 48px; /* Увеличенные цифры */
+        font-size: 72px; /* 48 * 1.5 */
         font-weight: bold;
         color: var(--primary-color);
       }
       .value {
-        font-size: 48px; /* Увеличенные цифры */
+        font-size: 72px; /* 48 * 1.5 */
         font-weight: bold;
       }
       .unit {
-        font-size: 24px; /* Увеличенные цифры */
+        font-size: 36px; /* 24 * 1.5 */
       }
       .controls {
         display: flex;
@@ -115,8 +115,8 @@ class KettleCard extends LitElement {
         margin-top: 16px;
       }
       .control-button {
-        width: 50px; /* Оставлены как есть */
-        height: 50px; /* Оставлены как есть */
+        width: 50px;
+        height: 50px;
         border: 3px solid var(--primary-color);
         border-radius: 50%;
         background: transparent;
