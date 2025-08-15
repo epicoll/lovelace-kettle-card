@@ -64,16 +64,16 @@ class KettleCard extends LitElement {
       }
       .circle-container {
         position: relative;
-        width: 225px; /* 150 * 1.5 */
-        height: 225px; /* 150 * 1.5 */
+        width: 225px; /* Увеличенный центральный круг */
+        height: 225px; /* Увеличенный центральный круг */
         margin: 0 auto;
-        transform: rotate(60deg); /* Поворот на 90° вправо */
+        transform: rotate(60deg); /* Поворот на 60° */
       }
       .circle-bg {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 22.5px solid var(--secondary-background-color); /* 15 * 1.5 */
+        border: 22.5px solid var(--secondary-background-color); /* Увеличенная толщина */
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -83,7 +83,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 22.5px solid var(--primary-color); /* 15 * 1.5 */
+        border: 22.5px solid var(--primary-color); /* Увеличенная толщина */
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -97,31 +97,31 @@ class KettleCard extends LitElement {
         left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
-        font-size: 48px; /* 32 * 1.5 */
+        font-size: 48px; /* Увеличенные цифры */
         font-weight: bold;
         color: var(--primary-color);
       }
       .value {
-        font-size: 48px; /* 32 * 1.5 */
+        font-size: 48px; /* Увеличенные цифры */
         font-weight: bold;
       }
       .unit {
-        font-size: 24px; /* 16 * 1.5 */
+        font-size: 24px; /* Увеличенные цифры */
       }
       .controls {
         display: flex;
         justify-content: center;
-        gap: 36px;
+        gap: 24px;
         margin-top: 16px;
       }
       .control-button {
-        width: 75px; /* 50 * 1.5 */
-        height: 75px; /* 50 * 1.5 */
-        border: 4.5px solid var(--primary-color); /* 3 * 1.5 */
+        width: 50px; /* Оставлены как есть */
+        height: 50px; /* Оставлены как есть */
+        border: 3px solid var(--primary-color);
         border-radius: 50%;
         background: transparent;
         color: var(--primary-color);
-        font-size: 36px; /* 24 * 1.5 */
+        font-size: 24px;
         cursor: pointer;
         display: flex;
         align-items: center;
