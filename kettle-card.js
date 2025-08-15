@@ -6,8 +6,8 @@
   console.log('KettleCard: LitElement available:', !!LitElement);
 
   // Попытка получить html и css
-  const html = window.LitHtml || (LitElement ? LitElement.prototype.html : null);
-  const css = window.LitCss || (LitElement ? LitElement.prototype.css : null);
+  const html = window.LitHtml || (LitElement && LitElement.prototype.html) || (() => '');
+  const css = window.LitCss || (LitElement && LitElement.prototype.css) || (() => '');
   console.log('KettleCard: html available:', !!html);
   console.log('KettleCard: css available:', !!css);
 
