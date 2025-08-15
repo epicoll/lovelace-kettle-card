@@ -11,8 +11,8 @@
   console.log('KettleCard: html available:', !!html);
   console.log('KettleCard: css available:', !!css);
 
-  if (!LitElement || !html || !css) {
-    console.error('KettleCard: Required Lit components not found');
+  if (!LitElement) {
+    console.error('KettleCard: LitElement not found');
     return;
   }
 
@@ -25,8 +25,8 @@
     }
 
     static get styles() {
-      if (typeof css !== 'function') return null;
-      return css`
+      // Упрощённый стиль без css
+      return LitElement.prototype.css`
         .card-header {
           display: flex;
           justify-content: space-between;
@@ -168,7 +168,7 @@
 
   console.log('KettleCard: KettleCard class defined');
 
-  // Класс редактора
+  // Класс редактора (только один раз!)
   class KettleCardEditor extends LitElement {
     static get properties() {
       return {
@@ -213,13 +213,6 @@
       });
       this.dispatchEvent(event);
     }
-}
-
-  console.log('KettleCard: KettleCard class defined');
-
-  // Класс редактора
-  class KettleCardEditor extends LitElement {
-    // ... код редактора
   }
 
   console.log('KettleCard: KettleCardEditor class defined');
