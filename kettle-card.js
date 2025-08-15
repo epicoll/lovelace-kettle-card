@@ -1,4 +1,8 @@
-((LitElement, html, css) => {
+(() => {
+  const LitElement = window.LitElement || Object.getPrototypeOf(customElements.get("hui-view"));
+  const html = window.LitHtml || LitElement.prototype.html;
+  const css = window.LitCss || LitElement.prototype.css;
+
   class KettleCard extends LitElement {
     static get properties() {
       return {
@@ -159,6 +163,8 @@
       };
     }
 
+console.log('KettleCard: Class defined');
+
     setConfig(config) {
       this.config = config;
     }
@@ -200,6 +206,8 @@
   // Регистрация элементов (только один раз для каждого)
   customElements.define('kettle-card', KettleCard);
   customElements.define('kettle-card-editor', KettleCardEditor);
+})();
+  console.log('KettleCard: Element registered');
 })(window.LitElement || Object.getPrototypeOf(customElements.get("hui-view")), 
    window.LitHtml || html, 
    window.LitCss || css);
