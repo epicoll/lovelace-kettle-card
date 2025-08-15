@@ -25,8 +25,8 @@
     }
 
     static get styles() {
-      // Упрощённый стиль без css
-      return LitElement.prototype.css`
+      if (typeof css !== 'function') return null;
+      return css`
         .card-header {
           display: flex;
           justify-content: space-between;
@@ -213,6 +213,15 @@
       });
       this.dispatchEvent(event);
     }
+  }
+
+}
+
+  console.log('KettleCard: KettleCard class defined');
+
+  // Класс редактора
+  class KettleCardEditor extends LitElement {
+    // ... код редактора
   }
 
   console.log('KettleCard: KettleCardEditor class defined');
