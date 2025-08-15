@@ -1,18 +1,12 @@
 (() => {
-  console.log('KettleCard: Script started loading');
-
   // Попытка получить LitElement из разных источников
   const LitElement = window.LitElement || Object.getPrototypeOf(customElements.get("hui-view"));
-  console.log('KettleCard: LitElement available:', !!LitElement);
 
   // Попытка получить html и css
   const html = window.LitHtml || (LitElement && LitElement.prototype.html) || (() => '');
   const css = window.LitCss || (LitElement && LitElement.prototype.css) || (() => '');
-  console.log('KettleCard: html available:', !!html);
-  console.log('KettleCard: css available:', !!css);
 
   if (!LitElement) {
-    console.error('KettleCard: LitElement not found');
     return;
   }
 
@@ -166,8 +160,6 @@
     }
   }
 
-  console.log('KettleCard: KettleCard class defined');
-
   // Класс редактора (только один раз!)
   class KettleCardEditor extends LitElement {
     static get properties() {
@@ -215,22 +207,10 @@
     }
   }
 
-}
-
-  console.log('KettleCard: KettleCard class defined');
-
-  // Класс редактора
-  class KettleCardEditor extends LitElement {
-    // ... код редактора
-  }
-
-  console.log('KettleCard: KettleCardEditor class defined');
-
   // Регистрация элементов
   try {
     customElements.define('kettle-card', KettleCard);
     customElements.define('kettle-card-editor', KettleCardEditor);
-    console.log('KettleCard: Elements registered successfully');
   } catch (error) {
     console.error('KettleCard: Error registering elements:', error);
   }
