@@ -1,5 +1,5 @@
 ((LitElement, html, css) => {
-class KettleCard extends LitElement {
+  class KettleCard extends LitElement {
     static get properties() {
       return {
         hass: {},
@@ -124,6 +124,9 @@ class KettleCard extends LitElement {
     }
 
     setTemperature(temp) {
+      // Добавлена проверка на существование hass
+      if (!this.hass) return;
+      
       this.hass.callService('water_heater', 'set_temperature', {
         entity_id: this.config.entity,
         temperature: temp
@@ -131,14 +134,15 @@ class KettleCard extends LitElement {
     }
 
     togglePower() {
-      if (this.config.switch_entity) {
-        const service = this.hass.states[this.config.switch_entity]?.state === 'on' 
-          ? 'turn_off' : 'turn_on';
-        
-        this.hass.callService('switch', service, {
-          entity_id: this.config.switch_entity
-        });
-      }
+      // Добавлена проверка на существование hass и switch_entity
+      if (!this.hass || !this.config.switch_entity) return;
+      
+      const service = this.hass.states[this.config.switch_entity]?.state === 'on' 
+        ? 'turn_off' : 'turn_on';
+      
+      this.hass.callService('switch', service, {
+        entity_id: this.config.switch_entity
+      });
     }
 
     static getConfigElement() {
@@ -146,8 +150,7 @@ class KettleCard extends LitElement {
     }
   }
 
-  customElements.define('kettle-card', KettleCard);
-
+  // Класс редактора (только один экземпляр)
   class KettleCardEditor extends LitElement {
     static get properties() {
       return {
@@ -193,53 +196,10 @@ class KettleCard extends LitElement {
       this.dispatchEvent(event);
     }
   }
-class KettleCardEditor extends LitElement {
-  static get properties() {
-    return {
-      hass: {},
-      config: {}
-    };
-  }
 
-  setConfig(config) {
-    this.config = config;
-  }
-
-  render() {
-    return html`
-      <div class="card-config">
-        <paper-input
-          label="Entity (температура)"
-          .value="${this.config.entity}"
-          @value-changed="${(e) => this.configChanged(e, 'entity')}">
-        </paper-input>
-        <paper-input
-          label="Switch Entity (включение)"
-          .value="${this.config.switch_entity}"
-          @value-changed="${(e) => this.configChanged(e, 'switch_entity')}">
-        </paper-input>
-        <paper-input
-          label="Name"
-          .value="${this.config.name}"
-          @value-changed="${(e) => this.configChanged(e, 'name')}">
-        </paper-input>
-      </div>
-    `;
-  }
-
-  configChanged(ev, key) {
-    const newConfig = { ...this.config };
-    newConfig[key] = ev.detail.value;
-    const event = new CustomEvent('config-changed', {
-      detail: { config: newConfig },
-      bubbles: true,
-      composed: true
-    });
-    this.dispatchEvent(event);
-  }
-}
-   customElements.define('kettle-card', KettleCard);
-customElements.define('kettle-card-editor', KettleCardEditor);
+  // Регистрация элементов (только один раз для каждого)
+  customElements.define('kettle-card', KettleCard);
+  customElements.define('kettle-card-editor', KettleCardEditor);
 })(window.LitElement || Object.getPrototypeOf(customElements.get("hui-view")), 
    window.LitHtml || html, 
    window.LitCss || css);
