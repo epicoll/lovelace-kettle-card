@@ -193,7 +193,51 @@ class KettleCard extends LitElement {
       this.dispatchEvent(event);
     }
   }
-   
+class KettleCardEditor extends LitElement {
+  static get properties() {
+    return {
+      hass: {},
+      config: {}
+    };
+  }
+
+  setConfig(config) {
+    this.config = config;
+  }
+
+  render() {
+    return html`
+      <div class="card-config">
+        <paper-input
+          label="Entity (температура)"
+          .value="${this.config.entity}"
+          @value-changed="${(e) => this.configChanged(e, 'entity')}">
+        </paper-input>
+        <paper-input
+          label="Switch Entity (включение)"
+          .value="${this.config.switch_entity}"
+          @value-changed="${(e) => this.configChanged(e, 'switch_entity')}">
+        </paper-input>
+        <paper-input
+          label="Name"
+          .value="${this.config.name}"
+          @value-changed="${(e) => this.configChanged(e, 'name')}">
+        </paper-input>
+      </div>
+    `;
+  }
+
+  configChanged(ev, key) {
+    const newConfig = { ...this.config };
+    newConfig[key] = ev.detail.value;
+    const event = new CustomEvent('config-changed', {
+      detail: { config: newConfig },
+      bubbles: true,
+      composed: true
+    });
+    this.dispatchEvent(event);
+  }
+}
    customElements.define('kettle-card', KettleCard);
 customElements.define('kettle-card-editor', KettleCardEditor);
 })(window.LitElement || Object.getPrototypeOf(customElements.get("hui-view")), 
