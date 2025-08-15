@@ -61,6 +61,91 @@ class KettleCard extends LitElement {
         font-size: 14px;
         color: var(--secondary-text-color);
       }
+      .circle-container {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+        transform: rotate(-90deg);
+      }
+      .circle-bg {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 10px solid var(--secondary-background-color);
+        box-sizing: border-box;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      .circle-progress {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 10px solid var(--primary-color);
+        box-sizing: border-box;
+        position: absolute;
+        top: 0;
+        left: 0;
+        clip-path: polygon(50% 50%, 50% 0%, 0% 0%, 0% 100%, 100% 100%);
+        transform: rotate(90deg);
+      }
+      .center-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .value {
+        font-size: 24px;
+        font-weight: bold;
+      }
+      .unit {
+        font-size: 14px;
+      }
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .control-button {
+        width: 40px;
+        height: 40px;
+        border: 2px solid var(--primary-color);
+        border-radius: 50%;
+        background: transparent;
+        color: var(--primary-color);
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .control-button:hover {
+        background: var(--primary-color);
+        color: white;
+      }
+      .mode-switch {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 12px;
+        background: var(--primary-color);
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mode-switch.off {
+        background: var(--error-color);
+      }
     `;
   }
 
@@ -75,8 +160,11 @@ class KettleCard extends LitElement {
     if (!this.hass || !this.config) return html``;
 
     const currentTemp = this.hass.states[this.config.entity]?.state || '--';
-    const isOn = this.config.switch_entity ? 
-      this.hass.states[this.config.switch_entity]?.state === 'on' : false;
+    const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+    const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
+
+    // Рассчитываем прогресс для круга
+    const progress = Math.min(targetTemp / 100, 1);
 
     return html`
       <ha-card>
@@ -86,42 +174,28 @@ class KettleCard extends LitElement {
             <div class="temp">${currentTemp}°C</div>
           </div>
 
-          ${this.config.modes ? html`
-            <div class="modes">
-              ${this.config.modes.map(mode => html`
-                <button class="mode-button" 
-                        @click="${() => this.setTemperature(mode.temperature)}">
-                  <ha-icon .icon="${mode.icon || 'mdi:kettle'}"></ha-icon>
-                  <div>${mode.name}</div>
-                </button>
-              `)}
-            </div>
-          ` : ''}
-
           <div class="temperature-control">
-            <ha-slider
-              min="40"
-              max="100"
-              step="1"
-              .value="${currentTemp}"
-              @change="${(e) => this.setTemperature(e.target.value)}"
-              pin>
-            </ha-slider>
-            <div style="text-align: center;">Целевая: ${currentTemp}°C</div>
-          </div>
-
-          ${this.config.show_status !== false ? html`
-            <div class="status">
-              ${isOn ? 'Нагревается...' : 'Выключен'}
+            <div class="circle-container">
+              <div class="circle-bg"></div>
+              <div class="circle-progress" style="transform: rotate(${progress * 360}deg);"></div>
+              <div class="center-text">
+                <div class="value">${targetTemp}</div>
+                <div class="unit">°C</div>
+              </div>
             </div>
-          ` : ''}
 
-          ${this.config.switch_entity ? html`
-            <button class="power-button ${isOn ? 'off' : ''}" 
-                    @click="${this.togglePower}">
-              ${isOn ? 'Выключить' : 'Включить'}
-            </button>
-          ` : ''}
+            <div class="controls">
+              <button class="control-button" @click="${() => this.setTemperature(targetTemp - 1)}">−</button>
+              <button class="control-button" @click="${() => this.setTemperature(targetTemp + 1)}">+</button>
+            </div>
+
+            ${this.config.switch_entity ? html`
+              <button class="mode-switch ${isOn ? 'off' : ''}" 
+                      @click="${this.togglePower}">
+                ${isOn ? 'Выключить' : 'Включить'}
+              </button>
+            ` : ''}
+          </div>
         </div>
       </ha-card>
     `;
