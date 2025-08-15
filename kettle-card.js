@@ -45,12 +45,12 @@ class KettleCard extends LitElement {
       }
       .power-button {
         width: 100%;
-        padding: 16px;
+        padding: 8px; /* Уменьшено в 2 раза */
         border: none;
         border-radius: 12px;
         background: var(--primary-color);
         color: white;
-        font-size: 18px;
+        font-size: 9px; /* Уменьшено в 2 раза */
         cursor: pointer;
       }
       .power-button.off {
@@ -64,8 +64,8 @@ class KettleCard extends LitElement {
       }
       .circle-container {
         position: relative;
-        width: 337.5px; /* 225 * 1.5 */
-        height: 337.5px; /* 225 * 1.5 */
+        width: 337.5px;
+        height: 337.5px;
         margin: 0 auto;
         transform: rotate(0deg); /* Поворот на 0° */
       }
@@ -73,7 +73,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 33.75px solid var(--secondary-background-color); /* 22.5 * 1.5 */
+        border: 33.75px solid var(--secondary-background-color);
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -83,7 +83,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 33.75px solid var(--primary-color); /* 22.5 * 1.5 */
+        border: 33.75px solid var(--primary-color);
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -97,16 +97,16 @@ class KettleCard extends LitElement {
         left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
-        font-size: 72px; /* 48 * 1.5 */
+        font-size: 72px;
         font-weight: bold;
         color: var(--primary-color);
       }
       .value {
-        font-size: 72px; /* 48 * 1.5 */
+        font-size: 72px;
         font-weight: bold;
       }
       .unit {
-        font-size: 36px; /* 24 * 1.5 */
+        font-size: 36px;
       }
       .controls {
         display: flex;
@@ -115,13 +115,13 @@ class KettleCard extends LitElement {
         margin-top: 16px;
       }
       .control-button {
-        width: 50px;
-        height: 50px;
-        border: 3px solid var(--primary-color);
+        width: 75px; /* Увеличено в 1.5 раза */
+        height: 75px; /* Увеличено в 1.5 раза */
+        border: 4.5px solid var(--primary-color); /* Увеличено в 1.5 раза */
         border-radius: 50%;
         background: transparent;
         color: var(--primary-color);
-        font-size: 24px;
+        font-size: 36px; /* Увеличено в 1.5 раза */
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -133,12 +133,12 @@ class KettleCard extends LitElement {
       }
       .mode-switch {
         width: 100%;
-        padding: 24px;
+        padding: 8px; /* Уменьшено в 2 раза */
         border: none;
         border-radius: 12px;
         background: var(--primary-color);
         color: white;
-        font-size: 20px;
+        font-size: 9px; /* Уменьшено в 2 раза */
         cursor: pointer;
         margin-top: 16px;
         display: flex;
