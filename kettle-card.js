@@ -25,6 +25,7 @@
     }
 
     static get styles() {
+      if (typeof css !== 'function') return null;
       return css`
         .card-header {
           display: flex;
@@ -212,6 +213,13 @@
       });
       this.dispatchEvent(event);
     }
+}
+
+  console.log('KettleCard: KettleCard class defined');
+
+  // Класс редактора
+  class KettleCardEditor extends LitElement {
+    // ... код редактора
   }
 
   console.log('KettleCard: KettleCardEditor class defined');
