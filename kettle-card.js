@@ -67,7 +67,7 @@ class KettleCard extends LitElement {
         width: 225px; /* 150 * 1.5 */
         height: 225px; /* 150 * 1.5 */
         margin: 0 auto;
-        transform: rotate(90deg); /* Поворот на 90° вправо */
+        transform: rotate(60deg); /* Поворот на 90° вправо */
       }
       .circle-bg {
         width: 100%;
