@@ -1,7 +1,20 @@
 (() => {
+  console.log('KettleCard: Script started loading');
+
+  // Попытка получить LitElement из разных источников
   const LitElement = window.LitElement || Object.getPrototypeOf(customElements.get("hui-view"));
-  const html = window.LitHtml || LitElement.prototype.html;
-  const css = window.LitCss || LitElement.prototype.css;
+  console.log('KettleCard: LitElement available:', !!LitElement);
+
+  // Попытка получить html и css
+  const html = window.LitHtml || (LitElement ? LitElement.prototype.html : null);
+  const css = window.LitCss || (LitElement ? LitElement.prototype.css : null);
+  console.log('KettleCard: html available:', !!html);
+  console.log('KettleCard: css available:', !!css);
+
+  if (!LitElement || !html || !css) {
+    console.error('KettleCard: Required Lit components not found');
+    return;
+  }
 
   class KettleCard extends LitElement {
     static get properties() {
@@ -128,7 +141,6 @@
     }
 
     setTemperature(temp) {
-      // Добавлена проверка на существование hass
       if (!this.hass) return;
       
       this.hass.callService('water_heater', 'set_temperature', {
@@ -138,7 +150,6 @@
     }
 
     togglePower() {
-      // Добавлена проверка на существование hass и switch_entity
       if (!this.hass || !this.config.switch_entity) return;
       
       const service = this.hass.states[this.config.switch_entity]?.state === 'on' 
@@ -154,7 +165,9 @@
     }
   }
 
-  // Класс редактора (только один экземпляр)
+  console.log('KettleCard: KettleCard class defined');
+
+  // Класс редактора
   class KettleCardEditor extends LitElement {
     static get properties() {
       return {
@@ -162,8 +175,6 @@
         config: {}
       };
     }
-
-console.log('KettleCard: Class defined');
 
     setConfig(config) {
       this.config = config;
@@ -203,11 +214,14 @@ console.log('KettleCard: Class defined');
     }
   }
 
-  // Регистрация элементов (только один раз для каждого)
-  customElements.define('kettle-card', KettleCard);
-  customElements.define('kettle-card-editor', KettleCardEditor);
+  console.log('KettleCard: KettleCardEditor class defined');
+
+  // Регистрация элементов
+  try {
+    customElements.define('kettle-card', KettleCard);
+    customElements.define('kettle-card-editor', KettleCardEditor);
+    console.log('KettleCard: Elements registered successfully');
+  } catch (error) {
+    console.error('KettleCard: Error registering elements:', error);
+  }
 })();
-  console.log('KettleCard: Element registered');
-})(window.LitElement || Object.getPrototypeOf(customElements.get("hui-view")), 
-   window.LitHtml || html, 
-   window.LitCss || css);
