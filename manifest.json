@@ -2,7 +2,7 @@
   "name": "Lovelace Kettle Card",
   "version": "1.0.0",
   "description": "Custom card for Palars kettle control with preset modes",
-  "author": "Nikkell",
+  "author": "Nikke11",
   "url": "https://github.com/epicoll/lovelace-kettle-card",
   "type": "custom-card",
   "card": {
