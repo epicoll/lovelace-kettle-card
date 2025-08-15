@@ -193,8 +193,9 @@ class KettleCard extends LitElement {
       this.dispatchEvent(event);
     }
   }
-
-  customElements.define('kettle-card', KettleCard);
+   
+   customElements.define('kettle-card', KettleCard);
+customElements.define('kettle-card-editor', KettleCardEditor);
 })(window.LitElement || Object.getPrototypeOf(customElements.get("hui-view")), 
    window.LitHtml || html, 
    window.LitCss || css);
