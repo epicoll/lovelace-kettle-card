@@ -17,8 +17,8 @@
     }
 
     static get styles() {
-      // Используем теговые шаблоны напрямую без LitElement.prototype.css
-      return css`
+      // Убираем css, используем строки для стилей
+      return LitElement.prototype.css`
         .card-header {
           display: flex;
           justify-content: space-between;
