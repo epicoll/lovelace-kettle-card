@@ -19,8 +19,8 @@
     }
 
     static get styles() {
-      if (typeof css !== 'function') return null;
-      return css`
+      // Используем LitElement.prototype.css напрямую
+      return LitElement.prototype.css`
         .card-header {
           display: flex;
           justify-content: space-between;
