@@ -1,5 +1,5 @@
 ((LitElement, html, css) => {
-  class KettleCard extends LitElement {
+class KettleCard extends LitElement {
     static get properties() {
       return {
         hass: {},
@@ -194,7 +194,7 @@
     }
   }
 
-  customElements.define('kettle-card-editor', KettleCardEditor);
+  customElements.define('kettle-card', KettleCard);
 })(window.LitElement || Object.getPrototypeOf(customElements.get("hui-view")), 
    window.LitHtml || html, 
    window.LitCss || css);
