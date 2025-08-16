@@ -72,7 +72,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        /* Цветная дуга */
+        /* Цветная точка */
         border: 33.75px solid;
         box-sizing: border-box;
         position: absolute;
@@ -80,7 +80,7 @@ class KettleCard extends LitElement {
         left: 0;
         /* Ограничиваем дугу снизу */
         clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
-        transform: rotate(210deg); /* Начало дуги */
+        transform: rotate(210deg); /* Начало точки */
         transition: transform 0.3s ease-out, border-color 0.3s ease-out;
       }
       .center-text {
@@ -160,13 +160,10 @@ class KettleCard extends LitElement {
     const maxTemp = 100;
     const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
 
-    // Рассчитываем прогресс (0-1)
-    const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
+    // Рассчитываем угол точки (от 210° до 330°)
+    const angle = 210 + ((targetTemp - minTemp) / (maxTemp - minTemp)) * 120;
     
-    // Угол дуги (от 0° до 120°)
-    const angle = progress * 120; 
-    
-    // Цвет дуги
+    // Цвет точки
     const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
 
     return html`
@@ -182,7 +179,7 @@ class KettleCard extends LitElement {
               <div class="circle-bg"></div>
               <div 
                 class="circle-progress" 
-                style="transform: rotate(${210 + angle}deg); border-color: ${color};"
+                style="transform: rotate(${angle}deg); border-color: ${color};"
               ></div>
               <div class="center-text">
                 <div class="value">${targetTemp}</div>
