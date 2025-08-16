@@ -16,6 +16,7 @@ class KettleCard extends LitElement {
   constructor() {
     super();
     this._targetTemp = 0;
+    this._isDragging = false;
   }
 
   static get styles() {
@@ -23,36 +24,48 @@ class KettleCard extends LitElement {
       .arc-container {
         position: relative;
         width: 300px;
-        height: 150px;
+        height: 300px;
         margin: 20px auto;
-        overflow: hidden;
       }
 
-      /* === НОВАЯ ДУГА ИЗ ТЕРМОСТАТА === */
       .arc-bg {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 20px solid var(--secondary-background-color);
-        box-sizing: border-box;
         position: absolute;
         top: 0;
         left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 12px solid #e0e0e0; /* Серый фон */
+        box-sizing: border-box;
+        transform: rotate(135deg); /* Начало дуги (270° = 360° - 90°) */
       }
+
       .arc-progress {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 20px solid var(--primary-color);
-        box-sizing: border-box;
         position: absolute;
         top: 0;
         left: 0;
-        clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
-        transform: rotate(0deg);
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 12px solid;
+        box-sizing: border-box;
+        transform: rotate(135deg); /* Начало дуги */
         transition: transform 0.3s ease-out;
       }
-      /* === КОНЕЦ НОВОЙ ДУГИ === */
+
+      .arc-handle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid black;
+        cursor: pointer;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+      }
 
       .temp-display {
         position: absolute;
@@ -61,8 +74,8 @@ class KettleCard extends LitElement {
         transform: translate(-50%, -50%);
         font-size: 48px;
         font-weight: bold;
-        color: var(--primary-text-color);
-        z-index: 2;
+        color: black;
+        z-index: 5;
       }
     `;
   }
@@ -88,25 +101,143 @@ class KettleCard extends LitElement {
     if (!this.hass || !this.config) return html``;
 
     const currentTemp = this.hass.states[this.config.entity]?.state || "--";
-    const targetTemp = this._targetTemp; // Используем локальное состояние
+    const targetTemp = this._targetTemp;
     const minTemp = 40;
     const maxTemp = 100;
 
-    // Рассчитываем прогресс для круга (0-1)
+    // Рассчитываем прогресс (0-1)
     const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
 
-    // Рассчитываем угол дуги (от 0° до 180°)
-    const angle = progress * 180;
+    // Рассчитываем угол дуги (270° = 0.75 * 360°)
+    const angle = 135 + progress * 270;
+
+    // Рассчитываем цвет (от синего к красному)
+    const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
+
+    // Рассчитываем позицию точки
+    const handlePosition = this._getHandlePosition(progress);
 
     return html`
       <ha-card>
         <div class="arc-container">
           <div class="arc-bg"></div>
-          <div class="arc-progress" style="transform: rotate(${angle}deg);"></div>
+          <div 
+            class="arc-progress" 
+            style="transform: rotate(${angle}deg); border-color: ${color};"
+          ></div>
+          <div 
+            class="arc-handle"
+            style="left: ${handlePosition.x}px; top: ${handlePosition.y}px;"
+            @mousedown="${this.startDrag}"
+            @touchstart="${this.startDrag}"
+          ></div>
           <div class="temp-display">${targetTemp}°C</div>
         </div>
       </ha-card>
     `;
+  }
+
+  // Получаем цвет для температуры (от синего к красному)
+  _getColorForTemp(temp, minTemp, maxTemp) {
+    const normalized = (temp - minTemp) / (maxTemp - minTemp);
+    const r = Math.round(255 * normalized);
+    const g = 0;
+    const b = Math.round(255 * (1 - normalized));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  // Получаем позицию точки по прогрессу
+  _getHandlePosition(progress) {
+    const radius = 150 - 6; // 150px = радиус, 6px = половина толщины дуги
+    const angle = 135 + progress * 270; // 135° = начальный угол
+    const rad = angle * Math.PI / 180;
+    const x = 150 + radius * Math.cos(rad);
+    const y = 150 + radius * Math.sin(rad);
+    return { x, y };
+  }
+
+  startDrag = (e) => {
+    e.preventDefault();
+    this._isDragging = true;
+
+    document.addEventListener('mousemove', this.handleDrag);
+    document.addEventListener('touchmove', this.handleDrag, { passive: false });
+    document.addEventListener('mouseup', this.stopDrag);
+    document.addEventListener('touchend', this.stopDrag);
+
+    this.updateTemperatureFromEvent(e);
+  }
+
+  handleDrag = (e) => {
+    if (!this._isDragging) return;
+    e.preventDefault();
+    this.updateTemperatureFromEvent(e);
+  };
+
+  stopDrag = () => {
+    this._isDragging = false;
+
+    document.removeEventListener('mousemove', this.handleDrag);
+    document.removeEventListener('touchmove', this.handleDrag);
+    document.removeEventListener('mouseup', this.stopDrag);
+    document.removeEventListener('touchend', this.stopDrag);
+  };
+
+  updateTemperatureFromEvent(e) {
+    const container = this.shadowRoot.querySelector('.arc-container');
+    if (!container) return;
+
+    let clientX, clientY;
+    if (e.type.includes('touch')) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const clickX = clientX - centerX;
+    const clickY = clientY - centerY;
+
+    // Рассчитываем угол (в радианах)
+    let angle = Math.atan2(clickY, clickX);
+
+    // Преобразуем угол в диапазон [0, 2π]
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    // Преобразуем угол в градусы
+    let degree = angle * (180 / Math.PI);
+
+    // Корректируем угол (от 135° до 405°)
+    if (degree < 135) degree += 360;
+    if (degree > 405) degree -= 360;
+
+    // Ограничиваем диапазон
+    degree = Math.max(135, Math.min(405, degree));
+
+    // Преобразуем угол в температуру
+    const minTemp = 40;
+    const maxTemp = 100;
+    const tempRange = maxTemp - minTemp;
+    const angleRange = 270; // 405° - 135° = 270°
+    const temp = Math.round(minTemp + ((degree - 135) / angleRange) * tempRange);
+
+    this._targetTemp = temp;
+    this.setTemperature(temp);
+  }
+
+  setTemperature(temp) {
+    if (!this.hass) return;
+
+    this.hass.callService('water_heater', 'set_temperature', {
+      entity_id: this.config.entity,
+      temperature: temp
+    });
   }
 
   static getConfigElement() {
