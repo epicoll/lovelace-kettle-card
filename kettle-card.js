@@ -80,7 +80,7 @@ class KettleCard extends LitElement {
         left: 0;
         /* Ограничиваем дугу снизу */
         clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
-        transform: rotate(270deg); /* Начало дуги */
+        transform: rotate(100deg); /* Начало дуги */
         transition: transform 0.3s ease-out, border-color 0.3s ease-out;
       }
       .center-text {
@@ -163,8 +163,8 @@ class KettleCard extends LitElement {
     // Рассчитываем прогресс (0-1)
     const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
     
-    // Угол дуги (от 0° до 180°)
-    const angle = progress * 180; 
+    // Угол дуги (от 0° до 100°)
+    const angle = progress * 100; 
     
     // Цвет дуги
     const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
@@ -182,7 +182,7 @@ class KettleCard extends LitElement {
               <div class="circle-bg"></div>
               <div 
                 class="circle-progress" 
-                style="transform: rotate(${270 + angle}deg); border-color: ${color};"
+                style="transform: rotate(${100 + angle}deg); border-color: ${color};"
               ></div>
               <div class="center-text">
                 <div class="value">${targetTemp}</div>
@@ -274,19 +274,19 @@ class KettleCard extends LitElement {
     // Преобразуем угол в градусы
     let degree = angle * (180 / Math.PI);
     
-    // Корректируем угол (от 270° до 450°, т.е. 90° + 360°)
-    if (degree < 270) degree += 360;
-    if (degree > 450) degree -= 360;
+    // Корректируем угол (от 100° до 200°)
+    if (degree < 100) degree += 360;
+    if (degree > 200) degree -= 360;
     
     // Ограничиваем диапазон
-    degree = Math.max(270, Math.min(450, degree));
+    degree = Math.max(100, Math.min(200, degree));
     
     // Преобразуем угол в температуру
     const minTemp = 40;
     const maxTemp = 100;
     const tempRange = maxTemp - minTemp;
-    const angleRange = 180; // 450° - 270° = 180°
-    const temp = Math.round(minTemp + ((degree - 270) / angleRange) * tempRange);
+    const angleRange = 100; // 200° - 100° = 100°
+    const temp = Math.round(minTemp + ((degree - 100) / angleRange) * tempRange);
 
     this._targetTemp = temp;
     this.setTemperature(temp);
