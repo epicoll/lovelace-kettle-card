@@ -51,8 +51,8 @@ class KettleCard extends LitElement {
       }
       .circle-container {
         position: relative;
-        width: 337.5px;
-        height: 337.5px;
+        width: 320px;
+        height: 320px;
         margin: 0 auto;
         transform: rotate(0deg);
       }
@@ -60,7 +60,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 33.75px solid var(--secondary-background-color);
+        border: 18px solid #e0e0e0;
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -70,7 +70,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 33.75px solid var(--primary-color);
+        border: 18px solid #0078d4;
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -103,13 +103,13 @@ class KettleCard extends LitElement {
         margin-top: 16px;
       }
       .control-button {
-        width: 75px;
-        height: 75px;
-        border: 4.5px solid var(--primary-color);
+        width: 48px;
+        height: 48px;
+        border: 1px solid var(--primary-color);
         border-radius: 50%;
         background: transparent;
         color: var(--primary-color);
-        font-size: 36px;
+        font-size: 24px;
         cursor: pointer;
         display: flex;
         align-items: center;
