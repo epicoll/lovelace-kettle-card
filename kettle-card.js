@@ -44,14 +44,18 @@ class KettleCard extends LitElement {
         text-align: center;
       }
       .power-button {
-        width: 100%;
-        padding: 8px; /* Уменьшено в 2 раза */
+        width: 50px; /* Увеличено в 1.1 раза */
+        height: 50px; /* Увеличено в 1.1 раза и сделано круглым */
         border: none;
-        border-radius: 12px;
+        border-radius: 50%; /* Круглая форма */
         background: var(--primary-color);
         color: white;
-        font-size: 9px; /* Уменьшено в 2 раза */
+        font-size: 10px; /* Увеличено в 1.1 раза */
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 16px auto 0; /* Центрирование */
       }
       .power-button.off {
         background: var(--error-color);
@@ -67,7 +71,7 @@ class KettleCard extends LitElement {
         width: 337.5px;
         height: 337.5px;
         margin: 0 auto;
-        transform: rotate(0deg); /* Поворот на 0° */
+        transform: rotate(0deg);
       }
       .circle-bg {
         width: 100%;
@@ -115,13 +119,13 @@ class KettleCard extends LitElement {
         margin-top: 16px;
       }
       .control-button {
-        width: 75px; /* Увеличено в 1.5 раза */
-        height: 75px; /* Увеличено в 1.5 раза */
-        border: 4.5px solid var(--primary-color); /* Увеличено в 1.5 раза */
+        width: 75px;
+        height: 75px;
+        border: 4.5px solid var(--primary-color);
         border-radius: 50%;
         background: transparent;
         color: var(--primary-color);
-        font-size: 36px; /* Увеличено в 1.5 раза */
+        font-size: 36px;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -132,21 +136,41 @@ class KettleCard extends LitElement {
         color: white;
       }
       .mode-switch {
-        width: 100%;
-        padding: 8px; /* Уменьшено в 2 раза */
+        width: 50px; /* Увеличено в 1.1 раза */
+        height: 50px; /* Увеличено в 1.1 раза и сделано круглым */
         border: none;
-        border-radius: 12px;
+        border-radius: 50%; /* Круглая форма */
         background: var(--primary-color);
         color: white;
-        font-size: 9px; /* Уменьшено в 2 раза */
+        font-size: 10px; /* Увеличено в 1.1 раза */
         cursor: pointer;
-        margin-top: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
+        margin: 16px auto 0; /* Центрирование */
       }
       .mode-switch.off {
         background: var(--error-color);
+      }
+      .temperature-slider {
+        width: 80%;
+        margin: 20px auto;
+      }
+      .temperature-slider input[type="range"] {
+        width: 100%;
+        height: 10px;
+        border-radius: 5px;
+        background: var(--secondary-background-color);
+        outline: none;
+        -webkit-appearance: none;
+      }
+      .temperature-slider input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        cursor: pointer;
       }
     `;
   }
@@ -184,6 +208,16 @@ class KettleCard extends LitElement {
                 <div class="value">${targetTemp}</div>
                 <div class="unit">°C</div>
               </div>
+            </div>
+
+            <div class="temperature-slider">
+              <input 
+                type="range" 
+                min="40" 
+                max="100" 
+                .value="${targetTemp}"
+                @change="${(e) => this.setTemperature(e.target.value)}"
+              >
             </div>
 
             <div class="controls">
