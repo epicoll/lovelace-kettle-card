@@ -7,8 +7,15 @@ class KettleCard extends LitElement {
   static get properties() {
     return {
       hass: {},
-      config: {}
+      config: {},
+      _targetTemp: { state: true } // Локальное состояние для анимации
     };
+  }
+
+  constructor() {
+    super();
+    this._isDragging = false;
+    this._targetTemp = 0;
   }
 
   static get styles() {
@@ -68,6 +75,7 @@ class KettleCard extends LitElement {
         left: 0;
         clip-path: polygon(50% 50%, 50% 0%, 0% 0%, 0% 100%, 100% 100%);
         transform: rotate(90deg);
+        transition: transform 0.1s ease-out; /* Плавная анимация */
       }
       .center-text {
         position: absolute;
@@ -116,7 +124,7 @@ class KettleCard extends LitElement {
         border-radius: 50%;
         cursor: pointer;
         z-index: 10;
-        opacity: 0;
+        touch-action: none; /* Отключаем стандартные touch действия */
       }
     `;
   }
@@ -128,11 +136,21 @@ class KettleCard extends LitElement {
     this.config = config;
   }
 
+  willUpdate(changedProperties) {
+    // Обновляем _targetTemp при изменении hass
+    if (changedProperties.has('hass') && this.hass && this.config) {
+      const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+      if (this._targetTemp !== targetTemp) {
+        this._targetTemp = targetTemp;
+      }
+    }
+  }
+
   render() {
     if (!this.hass || !this.config) return html``;
 
     const currentTemp = this.hass.states[this.config.entity]?.state || '--';
-    const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+    const targetTemp = this._targetTemp; // Используем локальное состояние
     const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
     const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
     const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
@@ -159,7 +177,8 @@ class KettleCard extends LitElement {
               <!-- Интерактивный круг для регулировки температуры -->
               <div 
                 class="interactive-circle"
-                @click="${(e) => this.handleCircleClick(e, minTemp, maxTemp)}"
+                @mousedown="${(e) => this.startDrag(e, minTemp, maxTemp)}"
+                @touchstart="${(e) => this.startDrag(e, minTemp, maxTemp)}"
               ></div>
             </div>
 
@@ -180,13 +199,60 @@ class KettleCard extends LitElement {
     `;
   }
 
-  handleCircleClick(e, minTemp, maxTemp) {
-    // Получаем координаты клика относительно центра круга
-    const rect = e.target.getBoundingClientRect();
+  startDrag(e, minTemp, maxTemp) {
+    e.preventDefault();
+    this._isDragging = true;
+    
+    // Добавляем обработчики событий
+    document.addEventListener('mousemove', this.handleDrag);
+    document.addEventListener('touchmove', this.handleDrag, { passive: false });
+    document.addEventListener('mouseup', this.stopDrag);
+    document.addEventListener('touchend', this.stopDrag);
+
+    // Немедленно обновляем температуру
+    this.updateTemperatureFromEvent(e, minTemp, maxTemp);
+  }
+
+  handleDrag = (e) => {
+    if (!this._isDragging) return;
+    e.preventDefault();
+    
+    const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
+    const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
+    
+    this.updateTemperatureFromEvent(e, minTemp, maxTemp);
+  };
+
+  stopDrag = () => {
+    this._isDragging = false;
+    
+    // Удаляем обработчики событий
+    document.removeEventListener('mousemove', this.handleDrag);
+    document.removeEventListener('touchmove', this.handleDrag);
+    document.removeEventListener('mouseup', this.stopDrag);
+    document.removeEventListener('touchend', this.stopDrag);
+  };
+
+  updateTemperatureFromEvent(e, minTemp, maxTemp) {
+    const circle = e.currentTarget?.closest('.circle-container') || e.target.closest('.circle-container');
+    if (!circle) return;
+
+    // Получаем координаты клика
+    let clientX, clientY;
+    if (e.type.includes('touch')) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    // Получаем координаты центра круга
+    const rect = circle.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const clickX = e.clientX - centerX;
-    const clickY = e.clientY - centerY;
+    const clickX = clientX - centerX;
+    const clickY = clientY - centerY;
 
     // Рассчитываем угол (в радианах)
     let angle = Math.atan2(clickY, clickX);
@@ -199,6 +265,9 @@ class KettleCard extends LitElement {
     // Преобразуем угол в температуру
     const tempRange = maxTemp - minTemp;
     const temp = Math.round(minTemp + (angle / (2 * Math.PI)) * tempRange);
+
+    // Обновляем локальное состояние (для анимации)
+    this._targetTemp = temp;
 
     // Устанавливаем температуру
     this.setTemperature(temp);
