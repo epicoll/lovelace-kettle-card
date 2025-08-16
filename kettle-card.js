@@ -19,52 +19,26 @@ class KettleCard extends LitElement {
         align-items: center;
         margin-bottom: 12px;
       }
-      .modes {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-      }
-      .mode-button {
-        flex: 1;
-        min-width: 70px;
-        padding: 8px;
-        border: none;
-        border-radius: 12px;
-        background: var(--secondary-background-color);
-        cursor: pointer;
-        font-size: 12px;
-      }
-      .mode-button.active {
-        background: var(--primary-color);
-        color: white;
-      }
       .temperature-control {
         margin: 16px 0;
         text-align: center;
       }
-      .power-button {
-        width: 50px; /* Увеличено в 1.1 раза */
-        height: 50px; /* Увеличено в 1.1 раза и сделано круглым */
+      .mode-switch {
+        width: 50px;
+        height: 50px;
         border: none;
-        border-radius: 50%; /* Круглая форма */
+        border-radius: 50%;
         background: var(--primary-color);
         color: white;
-        font-size: 10px; /* Увеличено в 1.1 раза */
+        font-size: 10px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 16px auto 0; /* Центрирование */
+        margin: 16px auto 0;
       }
-      .power-button.off {
+      .mode-switch.off {
         background: var(--error-color);
-      }
-      .status {
-        text-align: center;
-        margin: 8px 0;
-        font-size: 14px;
-        color: var(--secondary-text-color);
       }
       .circle-container {
         position: relative;
@@ -135,42 +109,14 @@ class KettleCard extends LitElement {
         background: var(--primary-color);
         color: white;
       }
-      .mode-switch {
-        width: 50px; /* Увеличено в 1.1 раза */
-        height: 50px; /* Увеличено в 1.1 раза и сделано круглым */
-        border: none;
-        border-radius: 50%; /* Круглая форма */
-        background: var(--primary-color);
-        color: white;
-        font-size: 10px; /* Увеличено в 1.1 раза */
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 16px auto 0; /* Центрирование */
-      }
-      .mode-switch.off {
-        background: var(--error-color);
-      }
-      .temperature-slider {
-        width: 80%;
-        margin: 20px auto;
-      }
-      .temperature-slider input[type="range"] {
+      .interactive-circle {
+        position: absolute;
         width: 100%;
-        height: 10px;
-        border-radius: 5px;
-        background: var(--secondary-background-color);
-        outline: none;
-        -webkit-appearance: none;
-      }
-      .temperature-slider input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 25px;
-        height: 25px;
+        height: 100%;
         border-radius: 50%;
-        background: var(--primary-color);
         cursor: pointer;
+        z-index: 10;
+        opacity: 0;
       }
     `;
   }
@@ -187,10 +133,12 @@ class KettleCard extends LitElement {
 
     const currentTemp = this.hass.states[this.config.entity]?.state || '--';
     const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+    const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
+    const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
     const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
 
-    // Рассчитываем прогресс для круга
-    const progress = Math.min(targetTemp / 100, 1);
+    // Рассчитываем прогресс для круга (0-1)
+    const progress = (targetTemp - minTemp) / (maxTemp - minTemp);
 
     return html`
       <ha-card>
@@ -208,16 +156,11 @@ class KettleCard extends LitElement {
                 <div class="value">${targetTemp}</div>
                 <div class="unit">°C</div>
               </div>
-            </div>
-
-            <div class="temperature-slider">
-              <input 
-                type="range" 
-                min="40" 
-                max="100" 
-                .value="${targetTemp}"
-                @change="${(e) => this.setTemperature(e.target.value)}"
-              >
+              <!-- Интерактивный круг для регулировки температуры -->
+              <div 
+                class="interactive-circle"
+                @click="${(e) => this.handleCircleClick(e, minTemp, maxTemp)}"
+              ></div>
             </div>
 
             <div class="controls">
@@ -235,6 +178,30 @@ class KettleCard extends LitElement {
         </div>
       </ha-card>
     `;
+  }
+
+  handleCircleClick(e, minTemp, maxTemp) {
+    // Получаем координаты клика относительно центра круга
+    const rect = e.target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const clickX = e.clientX - centerX;
+    const clickY = e.clientY - centerY;
+
+    // Рассчитываем угол (в радианах)
+    let angle = Math.atan2(clickY, clickX);
+    
+    // Преобразуем угол в диапазон [0, 2π]
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    // Преобразуем угол в температуру
+    const tempRange = maxTemp - minTemp;
+    const temp = Math.round(minTemp + (angle / (2 * Math.PI)) * tempRange);
+
+    // Устанавливаем температуру
+    this.setTemperature(temp);
   }
 
   setTemperature(temp) {
