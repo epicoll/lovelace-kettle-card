@@ -17,21 +17,36 @@ class KettleCard extends LitElement {
       .arc-container {
         position: relative;
         width: 300px;
-        height: 150px;
+        height: 150px; /* Полукруг */
         margin: 20px auto;
-        overflow: hidden;
+        overflow: hidden; /* Скрываем нижнюю часть круга */
       }
 
       .arc-bg {
         position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        height: 200%;
+        height: 200%; /* Делаем полный круг, но показываем только верхнюю половину */
         border-radius: 50%;
-        border: 20px solid #e0e0e0;
+        border: 20px solid #e0e0e0; /* Серый цвет дуги */
         box-sizing: border-box;
+
+        /* Делаем прозрачными верхнюю и нижнюю части, оставляя боковые */
         border-top-color: transparent;
-        border-right-color: transparent;
-        transform: rotate(45deg);
+        border-bottom-color: transparent;
+      }
+
+      .arc-left {
+        /* Поворачиваем левую дугу */
+        transform: rotate(45deg); /* Начинаем с 45 градусов (левая сторона) */
+      }
+
+      .arc-right {
+        /* Поворачиваем правую дугу */
+        transform: rotate(-45deg); /* Начинаем с -45 градусов (правая сторона) */
+        /* Накладываем поверх левой */
+        z-index: 1;
       }
 
       .temp-display {
@@ -42,6 +57,7 @@ class KettleCard extends LitElement {
         font-size: 48px;
         font-weight: bold;
         color: #333;
+        z-index: 2; /* Поверх дуг */
       }
     `;
   }
@@ -61,7 +77,11 @@ class KettleCard extends LitElement {
     return html`
       <ha-card>
         <div class="arc-container">
-          <div class="arc-bg"></div>
+          <!-- Левая дуга -->
+          <div class="arc-bg arc-left"></div>
+          <!-- Правая дуга -->
+          <div class="arc-bg arc-right"></div>
+          <!-- Температура по центру -->
           <div class="temp-display">${currentTemp}°C</div>
         </div>
       </ha-card>
