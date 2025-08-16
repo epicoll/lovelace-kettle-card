@@ -8,8 +8,14 @@ class KettleCard extends LitElement {
   static get properties() {
     return {
       hass: {},
-      config: {}
+      config: {},
+      _targetTemp: { state: true } // Локальное состояние
     };
+  }
+
+  constructor() {
+    super();
+    this._targetTemp = 0;
   }
 
   static get styles() {
@@ -17,37 +23,36 @@ class KettleCard extends LitElement {
       .arc-container {
         position: relative;
         width: 300px;
-        height: 150px; /* Полукруг */
+        height: 150px;
         margin: 20px auto;
-        overflow: hidden; /* Скрываем нижнюю часть круга */
+        overflow: hidden;
       }
 
+      /* === НОВАЯ ДУГА ИЗ ТЕРМОСТАТА === */
       .arc-bg {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 20px solid var(--secondary-background-color);
+        box-sizing: border-box;
         position: absolute;
         top: 0;
         left: 0;
+      }
+      .arc-progress {
         width: 100%;
-        height: 200%; /* Делаем полный круг, но показываем только верхнюю половину */
+        height: 100%;
         border-radius: 50%;
-        border: 20px solid #e0e0e0; /* Серый цвет дуги */
+        border: 20px solid var(--primary-color);
         box-sizing: border-box;
-
-        /* Делаем прозрачными верхнюю и нижнюю части, оставляя боковые */
-        border-top-color: transparent;
-        border-bottom-color: transparent;
+        position: absolute;
+        top: 0;
+        left: 0;
+        clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
+        transform: rotate(0deg);
+        transition: transform 0.3s ease-out;
       }
-
-      .arc-left {
-        /* Поворачиваем левую дугу (увеличено с 45 до 60) */
-        transform: rotate(60deg); /* Начинаем с 60 градусов (левая сторона) */
-      }
-
-      .arc-right {
-        /* Поворачиваем правую дугу (уменьшено с -45 до -60) */
-        transform: rotate(-60deg); /* Начинаем с -60 градусов (правая сторона) */
-        /* Накладываем поверх левой */
-        z-index: 1;
-      }
+      /* === КОНЕЦ НОВОЙ ДУГИ === */
 
       .temp-display {
         position: absolute;
@@ -56,8 +61,8 @@ class KettleCard extends LitElement {
         transform: translate(-50%, -50%);
         font-size: 48px;
         font-weight: bold;
-        color: #333;
-        z-index: 2; /* Поверх дуг */
+        color: var(--primary-text-color);
+        z-index: 2;
       }
     `;
   }
@@ -69,20 +74,36 @@ class KettleCard extends LitElement {
     this.config = config;
   }
 
+  willUpdate(changedProperties) {
+    // Обновляем _targetTemp при изменении hass
+    if (changedProperties.has('hass') && this.hass && this.config) {
+      const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+      if (this._targetTemp !== targetTemp) {
+        this._targetTemp = targetTemp;
+      }
+    }
+  }
+
   render() {
     if (!this.hass || !this.config) return html``;
 
     const currentTemp = this.hass.states[this.config.entity]?.state || "--";
-    
+    const targetTemp = this._targetTemp; // Используем локальное состояние
+    const minTemp = 40;
+    const maxTemp = 100;
+
+    // Рассчитываем прогресс для круга (0-1)
+    const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
+
+    // Рассчитываем угол дуги (от 0° до 180°)
+    const angle = progress * 180;
+
     return html`
       <ha-card>
         <div class="arc-container">
-          <!-- Левая дуга -->
-          <div class="arc-bg arc-left"></div>
-          <!-- Правая дуга -->
-          <div class="arc-bg arc-right"></div>
-          <!-- Температура по центру -->
-          <div class="temp-display">${currentTemp}°C</div>
+          <div class="arc-bg"></div>
+          <div class="arc-progress" style="transform: rotate(${angle}deg);"></div>
+          <div class="temp-display">${targetTemp}°C</div>
         </div>
       </ha-card>
     `;
