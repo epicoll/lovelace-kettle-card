@@ -16,6 +16,7 @@ class KettleCard extends LitElement {
     super();
     this._isDragging = false;
     this._targetTemp = 0;
+    this._circleElement = null; // Сохраняем ссылку на круг
   }
 
   static get styles() {
@@ -177,8 +178,8 @@ class KettleCard extends LitElement {
               <!-- Интерактивный круг для регулировки температуры -->
               <div 
                 class="interactive-circle"
-                @mousedown="${(e) => this.startDrag(e, minTemp, maxTemp)}"
-                @touchstart="${(e) => this.startDrag(e, minTemp, maxTemp)}"
+                @mousedown="${this.startDrag}"
+                @touchstart="${this.startDrag}"
               ></div>
             </div>
 
@@ -199,8 +200,14 @@ class KettleCard extends LitElement {
     `;
   }
 
-  startDrag(e, minTemp, maxTemp) {
+  // Сохраняем ссылку на элемент круга
+  firstUpdated() {
+    this._circleElement = this.shadowRoot.querySelector('.circle-container');
+  }
+
+  startDrag = (e) => {
     e.preventDefault();
+    console.log('startDrag');
     this._isDragging = true;
     
     // Добавляем обработчики событий
@@ -210,20 +217,19 @@ class KettleCard extends LitElement {
     document.addEventListener('touchend', this.stopDrag);
 
     // Немедленно обновляем температуру
-    this.updateTemperatureFromEvent(e, minTemp, maxTemp);
+    this.updateTemperatureFromEvent(e);
   }
 
   handleDrag = (e) => {
     if (!this._isDragging) return;
     e.preventDefault();
+    console.log('handleDrag');
     
-    const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
-    const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
-    
-    this.updateTemperatureFromEvent(e, minTemp, maxTemp);
+    this.updateTemperatureFromEvent(e);
   };
 
   stopDrag = () => {
+    console.log('stopDrag');
     this._isDragging = false;
     
     // Удаляем обработчики событий
@@ -233,9 +239,11 @@ class KettleCard extends LitElement {
     document.removeEventListener('touchend', this.stopDrag);
   };
 
-  updateTemperatureFromEvent(e, minTemp, maxTemp) {
-    const circle = e.currentTarget?.closest('.circle-container') || e.target.closest('.circle-container');
-    if (!circle) return;
+  updateTemperatureFromEvent(e) {
+    if (!this._circleElement) {
+      console.error('Circle element not found');
+      return;
+    }
 
     // Получаем координаты клика
     let clientX, clientY;
@@ -248,7 +256,7 @@ class KettleCard extends LitElement {
     }
 
     // Получаем координаты центра круга
-    const rect = circle.getBoundingClientRect();
+    const rect = this._circleElement.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     const clickX = clientX - centerX;
@@ -262,9 +270,15 @@ class KettleCard extends LitElement {
       angle += 2 * Math.PI;
     }
 
+    // Получаем min и max температуру
+    const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
+    const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
+
     // Преобразуем угол в температуру
     const tempRange = maxTemp - minTemp;
     const temp = Math.round(minTemp + (angle / (2 * Math.PI)) * tempRange);
+
+    console.log(`Angle: ${angle}, Temp: ${temp}`);
 
     // Обновляем локальное состояние (для анимации)
     this._targetTemp = temp;
