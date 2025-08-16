@@ -9,7 +9,7 @@ class KettleCard extends LitElement {
       hass: {},
       config: {},
       _targetTemp: { state: true }, // Локальное состояние
-      _progress: { state: true }      // Прогресс дуги (0-1)
+      _progress: { state: true }     // Прогресс дуги (0-1)
     };
   }
 
