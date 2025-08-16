@@ -80,7 +80,7 @@ class KettleCard extends LitElement {
         left: 0;
         /* Ограничиваем дугу снизу */
         clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
-        transform: rotate(200deg); /* Начало дуги */
+        transform: rotate(210deg); /* Начало дуги */
         transition: transform 0.3s ease-out, border-color 0.3s ease-out;
       }
       .center-text {
@@ -157,14 +157,14 @@ class KettleCard extends LitElement {
     const currentTemp = this.hass.states[this.config.entity]?.state || '--';
     const targetTemp = this._targetTemp;
     const minTemp = 40;
-    const maxTemp = 100; // Изменено на 100
+    const maxTemp = 100;
     const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
 
     // Рассчитываем прогресс (0-1)
     const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
     
-    // Угол дуги (от 0° до 140°) - 200° до 60° = 140°
-    const angle = progress * 140; 
+    // Угол дуги (от 0° до 120°)
+    const angle = progress * 120; 
     
     // Цвет дуги
     const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
@@ -182,7 +182,7 @@ class KettleCard extends LitElement {
               <div class="circle-bg"></div>
               <div 
                 class="circle-progress" 
-                style="transform: rotate(${200 + angle}deg); border-color: ${color};"
+                style="transform: rotate(${210 + angle}deg); border-color: ${color};"
               ></div>
               <div class="center-text">
                 <div class="value">${targetTemp}</div>
@@ -274,19 +274,19 @@ class KettleCard extends LitElement {
     // Преобразуем угол в градусы
     let degree = angle * (180 / Math.PI);
     
-    // Корректируем угол (от 200° до 420°, т.е. 60° + 360°)
-    if (degree < 200) degree += 360;
-    if (degree > 420) degree -= 360;
+    // Корректируем угол (от 210° до 330°)
+    if (degree < 210) degree += 360;
+    if (degree > 330) degree -= 360;
     
     // Ограничиваем диапазон
-    degree = Math.max(200, Math.min(420, degree));
+    degree = Math.max(210, Math.min(330, degree));
     
     // Преобразуем угол в температуру
     const minTemp = 40;
-    const maxTemp = 100; // Изменено на 100
+    const maxTemp = 100;
     const tempRange = maxTemp - minTemp;
-    const angleRange = 140; // 420° - 200° = 220° - 360° = 140° (т.к. разрыв 220°)
-    const temp = Math.round(minTemp + ((degree - 200) / angleRange) * tempRange);
+    const angleRange = 120; // 330° - 210°
+    const temp = Math.round(minTemp + ((degree - 210) / angleRange) * tempRange);
 
     this._targetTemp = temp;
     this.setTemperature(temp);
@@ -310,7 +310,7 @@ class KettleCard extends LitElement {
     
     // Ограничиваем температуру
     const minTemp = 40;
-    const maxTemp = 100; // Изменено на 100
+    const maxTemp = 100;
     temp = Math.max(minTemp, Math.min(maxTemp, temp));
     
     this.hass.callService('water_heater', 'set_temperature', {
