@@ -24,7 +24,7 @@ class KettleCard extends LitElement {
       .arc-container {
         position: relative;
         width: 300px;
-        height: 300px;
+        height: 150px; /* Полукруг */
         margin: 20px auto;
       }
 
@@ -37,7 +37,10 @@ class KettleCard extends LitElement {
         border-radius: 50%;
         border: 12px solid #e0e0e0; /* Серый фон */
         box-sizing: border-box;
-        transform: rotate(135deg); /* Начало дуги (270° = 360° - 90°) */
+        border-top-color: transparent;
+        border-left-color: transparent;
+        border-right-color: transparent;
+        transform: rotate(0deg);
       }
 
       .arc-progress {
@@ -49,7 +52,10 @@ class KettleCard extends LitElement {
         border-radius: 50%;
         border: 12px solid;
         box-sizing: border-box;
-        transform: rotate(135deg); /* Начало дуги */
+        border-top-color: transparent;
+        border-left-color: transparent;
+        border-right-color: transparent;
+        transform: rotate(0deg);
         transition: transform 0.3s ease-out;
       }
 
@@ -65,6 +71,11 @@ class KettleCard extends LitElement {
         cursor: pointer;
         transform: translate(-50%, -50%);
         z-index: 10;
+        transition: transform 0.3s ease-out;
+      }
+
+      .arc-handle:hover {
+        transform: translate(-50%, -50%) scale(1.2);
       }
 
       .temp-display {
@@ -108,8 +119,8 @@ class KettleCard extends LitElement {
     // Рассчитываем прогресс (0-1)
     const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
 
-    // Рассчитываем угол дуги (270° = 0.75 * 360°)
-    const angle = 135 + progress * 270;
+    // Рассчитываем угол дуги (от 0° до 180°)
+    const angle = progress * 180;
 
     // Рассчитываем цвет (от синего к красному)
     const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
@@ -149,10 +160,9 @@ class KettleCard extends LitElement {
   // Получаем позицию точки по прогрессу
   _getHandlePosition(progress) {
     const radius = 150 - 6; // 150px = радиус, 6px = половина толщины дуги
-    const angle = 135 + progress * 270; // 135° = начальный угол
-    const rad = angle * Math.PI / 180;
-    const x = 150 + radius * Math.cos(rad);
-    const y = 150 + radius * Math.sin(rad);
+    const angle = progress * Math.PI; // 0° - 180° = 0 - π
+    const x = 150 + radius * Math.cos(angle);
+    const y = 150 + radius * Math.sin(angle);
     return { x, y };
   }
 
@@ -204,28 +214,21 @@ class KettleCard extends LitElement {
 
     // Рассчитываем угол (в радианах)
     let angle = Math.atan2(clickY, clickX);
-
-    // Преобразуем угол в диапазон [0, 2π]
+    
+    // Преобразуем угол в диапазон [0, π]
     if (angle < 0) {
       angle += 2 * Math.PI;
     }
-
-    // Преобразуем угол в градусы
-    let degree = angle * (180 / Math.PI);
-
-    // Корректируем угол (от 135° до 405°)
-    if (degree < 135) degree += 360;
-    if (degree > 405) degree -= 360;
-
-    // Ограничиваем диапазон
-    degree = Math.max(135, Math.min(405, degree));
+    if (angle > Math.PI) {
+      angle = 2 * Math.PI - angle;
+    }
 
     // Преобразуем угол в температуру
     const minTemp = 40;
     const maxTemp = 100;
     const tempRange = maxTemp - minTemp;
-    const angleRange = 270; // 405° - 135° = 270°
-    const temp = Math.round(minTemp + ((degree - 135) / angleRange) * tempRange);
+    const angleRange = Math.PI; // 180° = π
+    const temp = Math.round(minTemp + (angle / angleRange) * tempRange);
 
     this._targetTemp = temp;
     this.setTemperature(temp);
