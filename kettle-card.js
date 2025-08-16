@@ -59,7 +59,7 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 33.75px solid var(--secondary-background-color);
+        border: 33.75px solid var(--secondary-background-color); /* Серый фон */
         box-sizing: border-box;
         position: absolute;
         top: 0;
@@ -69,14 +69,14 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 33.75px solid var(--primary-color);
+        border: 33.75px solid;
         box-sizing: border-box;
         position: absolute;
         top: 0;
         left: 0;
         clip-path: polygon(50% 50%, 50% 0%, 0% 0%, 0% 100%, 100% 100%);
         transform: rotate(90deg);
-        transition: transform 0.1s ease-out; /* Плавная анимация */
+        transition: transform 0.1s ease-out, stroke 0.3s ease-out; /* Плавная анимация */
       }
       .center-text {
         position: absolute;
@@ -152,12 +152,18 @@ class KettleCard extends LitElement {
 
     const currentTemp = this.hass.states[this.config.entity]?.state || '--';
     const targetTemp = this._targetTemp; // Используем локальное состояние
-    const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
-    const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
+    const minTemp = 40;
+    const maxTemp = 140;
     const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
 
     // Рассчитываем прогресс для круга (0-1)
     const progress = (targetTemp - minTemp) / (maxTemp - minTemp);
+    
+    // Рассчитываем угол (от 40° до 140°)
+    const angle = 40 + progress * 100; // 100° = 140° - 40°
+    
+    // Рассчитываем цвет
+    const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
 
     return html`
       <ha-card>
@@ -170,7 +176,10 @@ class KettleCard extends LitElement {
           <div class="temperature-control">
             <div class="circle-container">
               <div class="circle-bg"></div>
-              <div class="circle-progress" style="transform: rotate(${progress * 360}deg);"></div>
+              <div 
+                class="circle-progress" 
+                style="transform: rotate(${angle}deg); border-color: ${color};"
+              ></div>
               <div class="center-text">
                 <div class="value">${targetTemp}</div>
                 <div class="unit">°C</div>
@@ -207,7 +216,6 @@ class KettleCard extends LitElement {
 
   startDrag = (e) => {
     e.preventDefault();
-    console.log('startDrag');
     this._isDragging = true;
     
     // Добавляем обработчики событий
@@ -223,13 +231,11 @@ class KettleCard extends LitElement {
   handleDrag = (e) => {
     if (!this._isDragging) return;
     e.preventDefault();
-    console.log('handleDrag');
     
     this.updateTemperatureFromEvent(e);
   };
 
   stopDrag = () => {
-    console.log('stopDrag');
     this._isDragging = false;
     
     // Удаляем обработчики событий
@@ -241,7 +247,6 @@ class KettleCard extends LitElement {
 
   updateTemperatureFromEvent(e) {
     if (!this._circleElement) {
-      console.error('Circle element not found');
       return;
     }
 
@@ -270,15 +275,23 @@ class KettleCard extends LitElement {
       angle += 2 * Math.PI;
     }
 
-    // Получаем min и max температуру
-    const minTemp = this.hass.states[this.config.entity]?.attributes.min_temp || 40;
-    const maxTemp = this.hass.states[this.config.entity]?.attributes.max_temp || 100;
-
+    // Преобразуем угол в градусы
+    let degree = angle * (180 / Math.PI);
+    
+    // Корректируем угол (от 0° до 360° -> от 40° до 140°)
+    // Учитываем, что 0° соответствует 40°, 100° (диапазон) соответствует 140°
+    if (degree < 40) degree += 360;
+    if (degree > 140) degree -= 360;
+    
+    // Ограничиваем диапазон
+    degree = Math.max(40, Math.min(140, degree));
+    
     // Преобразуем угол в температуру
+    const minTemp = 40;
+    const maxTemp = 140;
     const tempRange = maxTemp - minTemp;
-    const temp = Math.round(minTemp + (angle / (2 * Math.PI)) * tempRange);
-
-    console.log(`Angle: ${angle}, Temp: ${temp}`);
+    const angleRange = 100; // 140° - 40°
+    const temp = Math.round(minTemp + ((degree - 40) / angleRange) * tempRange);
 
     // Обновляем локальное состояние (для анимации)
     this._targetTemp = temp;
@@ -287,8 +300,26 @@ class KettleCard extends LitElement {
     this.setTemperature(temp);
   }
 
+  // Получаем цвет для температуры (от синего к красному)
+  _getColorForTemp(temp, minTemp, maxTemp) {
+    // Нормализуем температуру в диапазон [0, 1]
+    const normalized = (temp - minTemp) / (maxTemp - minTemp);
+    
+    // Интерполируем между синим (0, 0, 255) и красным (255, 0, 0)
+    const r = Math.round(255 * normalized);
+    const g = 0;
+    const b = Math.round(255 * (1 - normalized));
+    
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
   setTemperature(temp) {
     if (!this.hass) return;
+    
+    // Ограничиваем температуру
+    const minTemp = 40;
+    const maxTemp = 140;
+    temp = Math.max(minTemp, Math.min(maxTemp, temp));
     
     this.hass.callService('water_heater', 'set_temperature', {
       entity_id: this.config.entity,
