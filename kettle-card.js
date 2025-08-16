@@ -8,15 +8,16 @@ class KettleCard extends LitElement {
     return {
       hass: {},
       config: {},
-      _targetTemp: { state: true } // Локальное состояние для анимации
+      _targetTemp: { state: true }, // Локальное состояние для анимации
+      _arcAngle: { state: true }     // Угол дуги
     };
   }
 
   constructor() {
     super();
     this._isDragging = false;
-    this._targetTemp = 0;
-    this._circleElement = null;
+    this._targetTemp = 40; // Начальная температура
+    this._arcAngle = 0;   // Начальный угол дуги
   }
 
   static get styles() {
@@ -50,8 +51,8 @@ class KettleCard extends LitElement {
       }
       .circle-container {
         position: relative;
-        width: 337.5px;
-        height: 337.5px;
+        width: 320px;
+        height: 320px;
         margin: 0 auto;
         transform: rotate(0deg);
       }
@@ -59,29 +60,24 @@ class KettleCard extends LitElement {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        /* Серый фон только для дуги */
-        border: 33.75px solid var(--secondary-background-color);
+        border: 18px solid #e0e0e0;
         box-sizing: border-box;
         position: absolute;
         top: 0;
         left: 0;
-        /* Ограничиваем дугу снизу */
-        clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
       }
       .circle-progress {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        /* Цветная дуга */
-        border: 33.75px solid;
+        border: 18px solid #0078d4;
         box-sizing: border-box;
         position: absolute;
         top: 0;
         left: 0;
-        /* Ограничиваем дугу снизу */
         clip-path: polygon(50% 50%, 0% 0%, 100% 0%, 100% 100%, 0% 100%);
-        transform: rotate(210deg); /* Начало дуги */
-        transition: transform 0.3s ease-out, border-color 0.3s ease-out;
+        transform: rotate(0deg);
+        transition: transform 0.1s ease-out;
       }
       .center-text {
         position: absolute;
@@ -107,13 +103,13 @@ class KettleCard extends LitElement {
         margin-top: 16px;
       }
       .control-button {
-        width: 75px;
-        height: 75px;
-        border: 4.5px solid var(--primary-color);
+        width: 48px;
+        height: 48px;
+        border: 1px solid var(--primary-color);
         border-radius: 50%;
         background: transparent;
         color: var(--primary-color);
-        font-size: 36px;
+        font-size: 24px;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -130,7 +126,7 @@ class KettleCard extends LitElement {
         border-radius: 50%;
         cursor: pointer;
         z-index: 10;
-        touch-action: none; /* Отключаем стандартные touch действия */
+        touch-action: none;
       }
     `;
   }
@@ -143,11 +139,12 @@ class KettleCard extends LitElement {
   }
 
   willUpdate(changedProperties) {
-    // Обновляем _targetTemp при изменении hass
     if (changedProperties.has('hass') && this.hass && this.config) {
-      const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+      const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 40;
       if (this._targetTemp !== targetTemp) {
         this._targetTemp = targetTemp;
+        // Обновляем угол дуги
+        this._arcAngle = ((targetTemp - 40) / 60) * 360;
       }
     }
   }
@@ -156,19 +153,8 @@ class KettleCard extends LitElement {
     if (!this.hass || !this.config) return html``;
 
     const currentTemp = this.hass.states[this.config.entity]?.state || '--';
-    const targetTemp = this._targetTemp; // Используем локальное состояние
-    const minTemp = 40;
-    const maxTemp = 100;
+    const targetTemp = this._targetTemp;
     const isOn = this.hass.states[this.config.switch_entity]?.state === 'on' || false;
-
-    // Рассчитываем прогресс для круга (0-1)
-    const progress = (targetTemp - minTemp) / (maxTemp - minTemp);
-
-    // Рассчитываем угол дуги (от 210° до 330°)
-    const angle = 210 + progress * 120;
-
-    // Цвет дуги
-    const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
 
     return html`
       <ha-card>
@@ -183,7 +169,7 @@ class KettleCard extends LitElement {
               <div class="circle-bg"></div>
               <div 
                 class="circle-progress" 
-                style="transform: rotate(${angle}deg); border-color: ${color};"
+                style="transform: rotate(${this._arcAngle}deg);"
               ></div>
               <div class="center-text">
                 <div class="value">${targetTemp}</div>
@@ -214,21 +200,83 @@ class KettleCard extends LitElement {
     `;
   }
 
-  // Получаем цвет для температуры (от синего к красному)
-  _getColorForTemp(temp, minTemp, maxTemp) {
-    // Нормализуем температуру в диапазон [0, 1]
-    const normalized = (temp - minTemp) / (maxTemp - minTemp);
+  startDrag = (e) => {
+    e.preventDefault();
+    this._isDragging = true;
     
-    // Интерполируем между синим (0, 0, 255) и красным (255, 0, 0)
-    const r = Math.round(255 * normalized);
-    const g = 0;
-    const b = Math.round(255 * (1 - normalized));
+    document.addEventListener('mousemove', this.handleDrag);
+    document.addEventListener('touchmove', this.handleDrag, { passive: false });
+    document.addEventListener('mouseup', this.stopDrag);
+    document.addEventListener('touchend', this.stopDrag);
+
+    this.updateArcFromEvent(e);
+  }
+
+  handleDrag = (e) => {
+    if (!this._isDragging) return;
+    e.preventDefault();
     
-    return `rgb(${r}, ${g}, ${b})`;
+    this.updateArcFromEvent(e);
+  };
+
+  stopDrag = () => {
+    this._isDragging = false;
+    
+    document.removeEventListener('mousemove', this.handleDrag);
+    document.removeEventListener('touchmove', this.handleDrag);
+    document.removeEventListener('mouseup', this.stopDrag);
+    document.removeEventListener('touchend', this.stopDrag);
+  };
+
+  updateArcFromEvent(e) {
+    const circle = e.currentTarget?.closest('.circle-container') || e.target.closest('.circle-container');
+    if (!circle) return;
+
+    let clientX, clientY;
+    if (e.type.includes('touch')) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const rect = circle.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const clickX = clientX - centerX;
+    const clickY = clientY - centerY;
+
+    // Рассчитываем угол (в радианах)
+    let angle = Math.atan2(clickY, clickX);
+    
+    // Преобразуем угол в диапазон [0, 2π]
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    // Преобразуем угол в градусы
+    let degree = angle * (180 / Math.PI);
+    
+    // Ограничиваем диапазон от 0° до 360°
+    degree = Math.max(0, Math.min(360, degree));
+    
+    // Обновляем угол дуги
+    this._arcAngle = degree;
+    
+    // Преобразуем угол в температуру
+    const temp = 40 + (degree / 360) * 60;
+    this._targetTemp = Math.round(temp);
+    
+    // Устанавливаем температуру
+    this.setTemperature(this._targetTemp);
   }
 
   setTemperature(temp) {
     if (!this.hass) return;
+    
+    // Ограничиваем температуру
+    temp = Math.max(40, Math.min(100, temp));
     
     this.hass.callService('water_heater', 'set_temperature', {
       entity_id: this.config.entity,
