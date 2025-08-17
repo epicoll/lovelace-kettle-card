@@ -9,15 +9,16 @@
       return {
         hass: {},
         config: {},
-        _targetTemp: { state: true } // Локальное состояние для анимации
+        _targetTemp: { state: true }, // Локальное состояние для анимации
+        _arcAngle: { state: true }     // Угол дуги
       };
     }
 
     constructor() {
       super();
       this._isDragging = false;
-      this._targetTemp = 0;
-      this._circleElement = null;
+      this._targetTemp = 40; // Начальная температура
+      this._arcAngle = 210;  // Начальный угол дуги (210°)
     }
 
     static get styles() {
@@ -63,8 +64,7 @@
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          /* Убираем серый фон */
-          border: 18px solid transparent; 
+          border: 18px solid #e0e0e0; /* Серый фон */
           box-sizing: border-box;
         }
         .circle-progress {
@@ -74,16 +74,18 @@
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          /* Синий цвет */
-          border: 18px solid #0078d4; 
+          border: 18px solid #0078d4; /* Синий цвет */
           box-sizing: border-box;
-          /* Зафиксированная дуга */
-          transform: rotate(210deg); 
-          /* Длина дуги (от 210° до 330°) */
-          stroke-dasharray: 176; 
-          /* Смещение дуги */
-          stroke-dashoffset: 0; 
-          transition: stroke-dashoffset 0.3s ease-out, stroke 0.3s ease-out;
+          /* Обрезаем нижнюю часть (90° снизу) */
+          clip-path: polygon(
+            50% 50%,    /* Центр */
+            0% 0%,      /* Левый верхний угол */
+            100% 0%,    /* Правый верхний угол */
+            100% 100%,  /* Правый нижний угол */
+            0% 100%     /* Левый нижний угол */
+          );
+          transform: rotate(210deg); /* Начало дуги */
+          transition: transform 0.1s ease-out;
         }
         .arc-handle {
           position: absolute;
@@ -148,7 +150,7 @@
           height: 100%;
           border-radius: 50%;
           cursor: pointer;
-          z-index: 10;
+          z-index: 5;
           touch-action: none;
         }
       `;
@@ -163,9 +165,11 @@
 
     willUpdate(changedProperties) {
       if (changedProperties.has('hass') && this.hass && this.config) {
-        const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 95;
+        const targetTemp = this.hass.states[this.config.entity]?.attributes.temperature || 40;
         if (this._targetTemp !== targetTemp) {
           this._targetTemp = targetTemp;
+          // Обновляем угол дуги
+          this._arcAngle = 210 + ((targetTemp - 40) / 60) * 120;
         }
       }
     }
@@ -182,11 +186,11 @@
       // Рассчитываем прогресс (0-1)
       const progress = Math.max(0, Math.min(1, (targetTemp - minTemp) / (maxTemp - minTemp)));
 
-      // Рассчитываем смещение дуги (0-176)
-      const offset = 176 - progress * 176;
+      // Рассчитываем угол дуги (от 210° до 330°)
+      const angle = 210 + progress * 120;
 
-      // Рассчитываем позицию ползунка
-      const handlePosition = this._getHandlePosition(progress);
+      // Цвет дуги
+      const color = this._getColorForTemp(targetTemp, minTemp, maxTemp);
 
       return html`
         <ha-card>
@@ -201,11 +205,11 @@
                 <div class="circle-bg"></div>
                 <div 
                   class="circle-progress" 
-                  style="stroke-dashoffset: ${offset};"
+                  style="transform: rotate(${angle}deg); border-color: ${color};"
                 ></div>
                 <div 
                   class="arc-handle"
-                  style="left: ${handlePosition.x}px; top: ${handlePosition.y}px;"
+                  style="left: ${this._getHandlePosition(progress).x}px; top: ${this._getHandlePosition(progress).y}px;"
                   @mousedown="${this.startDrag}"
                   @touchstart="${this.startDrag}"
                 ></div>
@@ -238,7 +242,7 @@
       `;
     }
 
-    // Получаем позицию ползунка по прогрессу
+    // Получаем позицию точки-индикатора по прогрессу
     _getHandlePosition(progress) {
       const radius = 160 - 9; // 160px = радиус, 9px = половина толщины дуги
       const angle = 210 + progress * 120; // 210° - 330° = 120°
@@ -246,6 +250,19 @@
       const x = 160 + radius * Math.cos(rad);
       const y = 160 + radius * Math.sin(rad);
       return { x, y };
+    }
+
+    // Получаем цвет для температуры (от синего к красному)
+    _getColorForTemp(temp, minTemp, maxTemp) {
+      // Нормализуем температуру в диапазон [0, 1]
+      const normalized = (temp - minTemp) / (maxTemp - minTemp);
+      
+      // Интерполируем между синим (0, 0, 255) и красным (255, 0, 0)
+      const r = Math.round(255 * normalized);
+      const g = 0;
+      const b = Math.round(255 * (1 - normalized));
+      
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
     startDrag = (e) => {
@@ -263,7 +280,6 @@
     handleDrag = (e) => {
       if (!this._isDragging) return;
       e.preventDefault();
-      
       this.updateTemperatureFromEvent(e);
     };
 
@@ -277,7 +293,8 @@
     };
 
     updateTemperatureFromEvent(e) {
-      if (!this._circleElement) return;
+      const circle = e.currentTarget?.closest('.circle-container') || e.target.closest('.circle-container');
+      if (!circle) return;
 
       let clientX, clientY;
       if (e.type.includes('touch')) {
@@ -288,7 +305,7 @@
         clientY = e.clientY;
       }
 
-      const rect = this._circleElement.getBoundingClientRect();
+      const rect = circle.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       const clickX = clientX - centerX;
@@ -305,13 +322,13 @@
       // Преобразуем угол в градусы
       let degree = angle * (180 / Math.PI);
       
+      // === ОГРАНИЧЕНИЕ ДВИЖЕНИЯ ===
       // Корректируем угол (от 210° до 330°)
-      if (degree < 210) degree += 360;
-      if (degree > 330) degree -= 360;
+      if (degree < 210) degree = 210;
+      if (degree > 330) degree = 330;
       
-      // Ограничиваем диапазон
-      degree = Math.max(210, Math.min(330, degree));
-      
+      // === КОНЕЦ ОГРАНИЧЕНИЯ ===
+
       // Преобразуем угол в температуру
       const minTemp = 40;
       const maxTemp = 100;
@@ -320,11 +337,17 @@
       const temp = Math.round(minTemp + ((degree - 210) / angleRange) * tempRange);
 
       this._targetTemp = temp;
+      this._arcAngle = degree; // Обновляем угол дуги
       this.setTemperature(temp);
     }
 
     setTemperature(temp) {
       if (!this.hass) return;
+      
+      // Ограничиваем температуру
+      const minTemp = 40;
+      const maxTemp = 100;
+      temp = Math.max(minTemp, Math.min(maxTemp, temp));
       
       this.hass.callService('water_heater', 'set_temperature', {
         entity_id: this.config.entity,
